@@ -11,11 +11,13 @@ def CheckSubEle(element):
     SubEle = element.find_all(recursive=False)
 
     if SubEle:
-        return True
+        if len(SubEle) == 1 and SubEle[0].name == 'span' and SubEle[0].get_text() == ' ':
+            return False
+        else:
+            return True
     else:
         return False
-
-
+    
 
 def output(body):
     engine = pyttsx3.init()
@@ -23,7 +25,7 @@ def output(body):
     engine.setProperty('volume', 1.0)       # Volume (0.0 to 1.0)
 
     for para in body.find_all('p'):
-        first_child = para.contents[0] if para.contents else None
+        allText = para.get_text()
 
         plain_texts = [element for element in para.find_all(string=True, recursive=False) if element.strip()]
 
@@ -37,59 +39,50 @@ def output(body):
                 else:
                     elements.append(e)
 
-        # if first_child.name is None:
-        #     print("plaintext")
-        # else:
-        #     print(first_child.name) 
-        # print(plain_texts)
-        # print()
-        # print(elements)
-        # print()
-        # print()
-        # print()
+        while (len(plain_texts) > 0 and len(elements) > 0):
+            pt = plain_texts[0]
+            e = elements[0].get_text()
 
+            if (allText[0:len(pt)] == pt):
+                engine.setProperty('volume', 1.0)
+                engine.say(pt)
+                engine.runAndWait()
+                plain_texts.pop(0)
+                allText = allText[len(pt):]
+            else:
+                if allText[0] == ' ':
+                    allText = allText[1:]
+
+                if elements[0].name == 'a':
+                    engine.setProperty('volume', 0.4)
+                else:
+                    engine.setProperty('volume', 1)
+                engine.say(e)
+                engine.runAndWait()
+                elements.pop(0)
+                allText = allText[len(e):]
         
-        if first_child.name is None:            #para starts with a plain text
-            i = 0
-            while (len(plain_texts) > 0 or len(elements) > 0):
-                if (i%2 == 0):                  #do plain text
-                    print(plain_texts[0])
+        while (len(plain_texts)>0):
+            pt = plain_texts[0]
+            engine.setProperty('volume', 1.0)
+            engine.say(pt)
+            engine.runAndWait()
+            plain_texts.pop(0)
+            allText = allText[len(pt):]
 
-                    engine.setProperty('volume', 1.0)
-                    engine.say(plain_texts[0])
-                    engine.runAndWait()
-                    plain_texts.pop(0)
-                    i += 1
-                else:                           #do elements
-                    print(elements[0].get_text())
+        while (len(elements)>0):
+            if allText[0] == ' ':
+                allText = allText[1:]
 
-                    if elements[0].name == 'a':
-                        engine.setProperty('volume', 0.4)
-                    engine.say(elements[0].get_text())
-                    engine.runAndWait()
-                    elements.pop(0)
-                    i += 1
-
-        else:                                  #para starts with an element
-            i = 0
-            while (len(plain_texts) > 0 or len(elements) > 0):
-                if (i%2 == 0):                  #do elements
-                    print(elements[0].get_text())
-
-                    if elements[0].name == 'a':
-                        engine.setProperty('volume', 0.4)
-                    engine.say(elements[0].get_text())
-                    engine.runAndWait()
-                    elements.pop(0)
-                    i += 1
-                else:                           #do plain text
-                    print(plain_texts[0])
-
-                    engine.setProperty('volume', 1.0)
-                    engine.say(plain_texts[0])
-                    engine.runAndWait()
-                    plain_texts.pop(0)
-                    i += 1
+            e = elements[0]
+            if elements[0].name == 'a':
+                engine.setProperty('volume', 0.4)
+            else:
+                engine.setProperty('volume', 1)
+            engine.say(e)
+            engine.runAndWait()
+            elements.pop(0)
+            allText = allText[len(e):]
 
 
 def search(wiki_link):
@@ -127,6 +120,3 @@ with sr.Microphone() as source:
 
     except:
         print("Could not recognize your voice")
-
-
-#some anchor tags webpage mein saath saath hote hai, but pane algo ke output mein unke beech mein koi plain text add ho jata hai
