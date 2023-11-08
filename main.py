@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import pyttsx3
 import keyboard
 import sys
+import time
 
 engine = pyttsx3.init()
 r = sr.Recognizer()
@@ -57,6 +58,15 @@ def CheckSubEle(element):
             return True
     else:
         return False
+    
+def outputImg(element):
+    caption = (element.find("figcaption")).get_text()
+
+    engine.setProperty('volume', 1.0)
+    engine.say("An image with the description")
+    time.sleep(0.5)
+    engine.say(caption)
+    engine.runAndWait()
 
 
 def outputP(para):
@@ -152,8 +162,13 @@ def output(body):
     engine.setProperty('volume', 1.0)    
 
     for tag in body.find_all(recursive=False):
-        if tag.name == 'p':
-            outputP(tag)
+        # if tag.name == 'p':
+        #     outputP(tag)
+        # elif tag.name == 'figure':
+        #     outputImg(tag)
+
+        if tag.name == 'figure':
+            outputImg(tag)
 
 
 def search(text):
