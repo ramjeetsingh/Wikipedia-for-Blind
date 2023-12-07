@@ -59,6 +59,7 @@ def CheckSubEle(element):
     else:
         return False
     
+    
 def outputImg(element):
     caption = (element.find("figcaption")).get_text()
 
@@ -107,7 +108,14 @@ def outputP(para):
             engine.say(e)
             engine.runAndWait()
 
-            # if elements[0].name == 'a':
+            if elements[0].name == 'a':
+                if keyboard.read_key() == 'enter':
+                    search(e)
+
+                    # event_handler = lambda e: search(e)
+                    # keyboard.hook(event_handler)
+                    # keyboard.wait('esc')
+                    # keyboard.unhook()
             #     # AccessLink(e)
             #     event_handler = lambda event: on_key_event(event, e)
 
@@ -143,7 +151,14 @@ def outputP(para):
         engine.say(e)
         engine.runAndWait()
 
-        # if elements[0].name == 'a':
+        if elements[0].name == 'a':
+            if keyboard.read_key() == 'enter':
+                search(e)
+
+                # event_handler = lambda e: search(e)
+                # keyboard.hook(event_handler)
+                # keyboard.wait('esc')
+                # keyboard.unhook()
         #     # AccessLink(e)
         #     event_handler = lambda event: on_key_event(event, e)
 
@@ -153,22 +168,24 @@ def outputP(para):
 
         #     keyboard.unhook_all()  # Unhook the keyboard events
 
+
         elements.pop(0)
         allText = allText[len(e):]
 
 
 def output(body):
-    engine.setProperty('rate', 300)        
+
+    engine.setProperty('rate', 200)        
     engine.setProperty('volume', 1.0)    
 
     for tag in body.find_all(recursive=False):
-        # if tag.name == 'p':
-        #     outputP(tag)
-        # elif tag.name == 'figure':
-        #     outputImg(tag)
-
-        if tag.name == 'figure':
+        if tag.name == 'p':
+            outputP(tag)
+        elif tag.name == 'figure':
             outputImg(tag)
+
+        # if tag.name == 'figure':
+        #     outputImg(tag)
 
 
 def search(text):
