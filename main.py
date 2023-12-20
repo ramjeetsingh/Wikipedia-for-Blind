@@ -4,48 +4,17 @@ import requests
 from bs4 import BeautifulSoup
 import pyttsx3
 import keyboard
-import sys
 import time
 
 engine = pyttsx3.init()
 r = sr.Recognizer()
 
-# def on_key_event(e, linkText):
-#     if e.event_type == keyboard.KEY_DOWN:
-#         if e.name == 'enter':
-#             search(linkText)
-#         else:
-#             return
 
 
-# def AccessLink(linkText):
-#     eng = pyttsx3.init()
-#     eng.setProperty('rate', 180)
-#     eng.setProperty('volume', 1)
+def outputImg(element):
+    caption = (element.find("figcaption"))
+    return outputP(caption)
 
-#     # eng.say(f'Do you want to visit the wikipedia page for {linkText}.')
-
-#     event_handler = lambda e: on_key_event(e, linkText)
-
-#     keyboard.hook(event_handler)
-
-#     keyboard.wait('esc')  # Wait for the 'Esc' key to exit the program
-
-#     keyboard.unhook_all()  # Unhook the keyboard events
-
-#     # try:
-#     #     key = keyboard.wait()
-#     #     if key == 'y':
-#     #         if page:
-#     #             wikipedia_link = f'https://en.wikipedia.org/wiki/{linkText}'
-#     #             print(f'Wikipedia link for "{text}": {wikipedia_link}')
-#     #             search(wikipedia_link)
-#     #         else:
-#     #             print(f'Page for "{text}" does not exist on Wikipedia.')
-#     #     else:
-#     #         return
-#     # except:
-#     #     return
 
 
 def CheckSubEle(element):
@@ -58,17 +27,6 @@ def CheckSubEle(element):
             return True
     else:
         return False
-    
-    
-def outputImg(element):
-    caption = (element.find("figcaption")).get_text()
-
-    engine.setProperty('volume', 1.0)
-    engine.say("An image with the description")
-    time.sleep(0.5)
-    engine.say(caption)
-    engine.runAndWait()
-
 
 def outputP(para):
     allText = para.get_text()
@@ -111,19 +69,8 @@ def outputP(para):
             if elements[0].name == 'a':
                 if keyboard.read_key() == 'enter':
                     search(e)
-
-                    # event_handler = lambda e: search(e)
-                    # keyboard.hook(event_handler)
-                    # keyboard.wait('esc')
-                    # keyboard.unhook()
-            #     # AccessLink(e)
-            #     event_handler = lambda event: on_key_event(event, e)
-
-            #     keyboard.hook(event_handler)
-
-            #     keyboard.wait('esc')  # Wait for the 'Esc' key to exit the program
-
-            #     keyboard.unhook_all()  # Unhook the keyboard events
+                elif keyboard.read_key() == 'backspace':
+                    return True
 
             elements.pop(0)
             allText = allText[len(e):]  
@@ -154,38 +101,31 @@ def outputP(para):
         if elements[0].name == 'a':
             if keyboard.read_key() == 'enter':
                 search(e)
-
-                # event_handler = lambda e: search(e)
-                # keyboard.hook(event_handler)
-                # keyboard.wait('esc')
-                # keyboard.unhook()
-        #     # AccessLink(e)
-        #     event_handler = lambda event: on_key_event(event, e)
-
-        #     keyboard.hook(event_handler)
-
-        #     keyboard.wait('esc')  # Wait for the 'Esc' key to exit the program
-
-        #     keyboard.unhook_all()  # Unhook the keyboard events
-
+            elif keyboard.read_key() == 'backspace':
+                return True
 
         elements.pop(0)
         allText = allText[len(e):]
+    
+    return False
 
 
 def output(body):
-
+    end = False
     engine.setProperty('rate', 200)        
     engine.setProperty('volume', 1.0)    
 
     for tag in body.find_all(recursive=False):
-        if tag.name == 'p':
-            outputP(tag)
-        elif tag.name == 'figure':
-            outputImg(tag)
+        if end:
+            return
+        else:
+            if tag.name == 'p':
+                end = outputP(tag)
+            elif tag.name == 'figure':
+                end = outputImg(tag)
 
-        # if tag.name == 'figure':
-        #     outputImg(tag)
+            # if tag.name == 'figure':
+            #     outputImg(tag)
 
 
 def search(text):
