@@ -10,6 +10,58 @@ engine = pyttsx3.init()
 r = sr.Recognizer()
 
 
+def outputTable(element):
+    caption = element.find("caption")
+    caption_text = caption.get_text()
+
+    engine.say("Here are the contents of a table describing" + caption_text)
+    engine.runAndWait()
+
+    body = element.find("tbody")
+    for row in body.find_all(recursive=False):
+        style_attribute = row.get('style', '')
+        if 'display: none' in style_attribute or 'display:none' in style_attribute:
+            continue
+
+        print(row.get_text())
+
+        onlyHeadings = True
+        headingCount = 0
+        for content in row.find_all(recursive = False):
+            if content.name != "th":
+                onlyHeadings = False
+                break
+            else:
+                headingCount += 1
+
+        iter = 0 
+        print(onlyHeadings, headingCount)
+        for content in row.find_all(recursive = False):
+            if onlyHeadings:
+                if headingCount == 1:
+                    engine.say(content.get_text() + " is the section heading")
+                    engine.runAndWait()
+
+                else:
+                    if iter == 0:
+                        engine.say("Following are the column headings")
+                        engine.runAndWait()
+                    engine.say(content.get_text())
+                    engine.runAndWait()
+                    iter += 1
+
+
+            else:
+                if (content.name == "td") and ("infobox-image" in content.get("class", [])):
+                    cap = content.find("div", attrs={'class': 'infobox-caption'})
+                    engine.say("An image with the caption" + cap.get_text())
+                    engine.runAndWait()
+                elif (content.name == "td" and ("infobox-data" in content.get("class", []) or not content.get('class'))) or content.name == "th":
+                    data = content.get_text()
+                    engine.say(data)
+                    engine.runAndWait()
+
+
 
 def outputImg(element):
     caption = (element.find("figcaption"))
@@ -112,20 +164,20 @@ def outputP(para):
 
 def output(body):
     end = False
-    engine.setProperty('rate', 200)        
+    engine.setProperty('rate', 300)        
     engine.setProperty('volume', 1.0)    
 
     for tag in body.find_all(recursive=False):
         if end:
             return
         else:
-            if tag.name == 'p':
-                end = outputP(tag)
-            elif tag.name == 'figure':
-                end = outputImg(tag)
+            # if tag.name == 'p':
+            #     end = outputP(tag)
+            # elif tag.name == 'figure':
+            #     end = outputImg(tag)
 
-            # if tag.name == 'figure':
-            #     outputImg(tag)
+            if tag.name == 'table':
+                outputTable(tag)
 
 
 def search(text):
