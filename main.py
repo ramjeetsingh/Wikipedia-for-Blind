@@ -4,7 +4,7 @@ import requests
 from bs4 import BeautifulSoup
 import pyttsx3
 import keyboard
-import time
+from hyperlink_similarity import find_similarity
 
 engine = pyttsx3.init()
 r = sr.Recognizer()
@@ -53,9 +53,10 @@ def outputTable(element):
 
             else:
                 if (content.name == "td") and ("infobox-image" in content.get("class", [])):
-                    cap = content.find("div", attrs={'class': 'infobox-caption'})
-                    engine.say("An image with the caption" + cap.get_text())
-                    engine.runAndWait()
+                    if content.find("div", attrs={'class': 'infobox-caption'}):
+                        cap = content.find("div", attrs={'class': 'infobox-caption'})
+                        engine.say("An image with the caption" + cap.get_text())
+                        engine.runAndWait()
                 elif (content.name == "td" and ("infobox-data" in content.get("class", []) or not content.get('class'))) or content.name == "th":
                     data = content.get_text()
                     engine.say(data)
@@ -63,9 +64,11 @@ def outputTable(element):
 
 
 
-def outputImg(element):
+def outputImg(element, body):
     caption = (element.find("figcaption"))
-    return outputP(caption)
+    engine.say("An image with the caption ")
+    engine.runAndWait()
+    return outputP(caption, body)
 
 
 
@@ -80,7 +83,7 @@ def CheckSubEle(element):
     else:
         return False
 
-def outputP(para):
+def outputP(para, body):
     allText = para.get_text()
 
     plain_texts = [element for element in para.find_all(string=True, recursive=False) if element.strip()]
@@ -119,6 +122,7 @@ def outputP(para):
             engine.runAndWait()
 
             if elements[0].name == 'a':
+                # if find_similarity(body.get_text(), e) >= 0.8:
                 if keyboard.read_key() == 'enter':
                     search(e)
                 elif keyboard.read_key() == 'backspace':
@@ -151,6 +155,7 @@ def outputP(para):
         engine.runAndWait()
 
         if elements[0].name == 'a':
+            # if find_similarity(body.get_text(), e) >= 0.8:
             if keyboard.read_key() == 'enter':
                 search(e)
             elif keyboard.read_key() == 'backspace':
@@ -171,12 +176,11 @@ def output(body):
         if end:
             return
         else:
-            # if tag.name == 'p':
-            #     end = outputP(tag)
-            # elif tag.name == 'figure':
-            #     end = outputImg(tag)
-
-            if tag.name == 'table':
+            if tag.name == 'p':
+                end = outputP(tag, body)
+            elif tag.name == 'figure':
+                end = outputImg(tag, body)
+            elif tag.name == 'table':
                 outputTable(tag)
 
 
