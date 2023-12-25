@@ -4,10 +4,38 @@ import requests
 from bs4 import BeautifulSoup
 import pyttsx3
 import keyboard
-from hyperlink_similarity import find_similarity
+import spacy
+
+nlp = spacy.load(r'C:\en_core_web_md-3.7.1\en_core_web_md\en_core_web_md-3.7.1')
+nlp.max_length = 1500000
 
 engine = pyttsx3.init()
 r = sr.Recognizer()
+
+
+
+def get_content(l):
+    resp = requests.get(l)
+    soup = BeautifulSoup(resp.text, features="lxml")      
+    body_container = soup.find("div", attrs={'id': 'mw-content-text'})        
+    body = body_container.find("div", attrs={'class': 'mw-parser-output'})
+
+    return body.get_text()
+
+
+
+
+def find_similarity(page1, link_topic):
+    page1 = nlp(page1[:min(len(page1), 10000)])
+
+    page = wp.page(link_topic, auto_suggest=False)
+    wiki_link = f'https://en.wikipedia.org/wiki/{page.title}'
+    page2 = (get_content(wiki_link))
+    page2 = nlp(page2[:min(len(page2), 10000)])
+
+    return page1.similarity(page2)
+
+
 
 
 def outputTable(element):
@@ -50,7 +78,6 @@ def outputTable(element):
                     engine.runAndWait()
                     iter += 1
 
-
             else:
                 if (content.name == "td") and ("infobox-image" in content.get("class", [])):
                     if content.find("div", attrs={'class': 'infobox-caption'}):
@@ -64,11 +91,13 @@ def outputTable(element):
 
 
 
+
 def outputImg(element, body):
     caption = (element.find("figcaption"))
     engine.say("An image with the caption ")
     engine.runAndWait()
     return outputP(caption, body)
+
 
 
 
@@ -82,6 +111,9 @@ def CheckSubEle(element):
             return True
     else:
         return False
+
+
+
 
 def outputP(para, body):
     allText = para.get_text()
@@ -98,7 +130,6 @@ def outputP(para, body):
             else:
                 elements.append(e)
 
-
     while (len(plain_texts) > 0 and len(elements) > 0):
         pt = plain_texts[0]
         e = elements[0].get_text()
@@ -113,25 +144,23 @@ def outputP(para, body):
             if allText[0] == ' ':
                 allText = allText[1:]
                                                                                                                                         
+            if 'reference' not in elements[0].parent.get('class', []):
+                if elements[0].name == 'a':
+                    engine.setProperty('volume', 0.6)
+                else:
+                    engine.setProperty('volume', 1)
+                engine.say(e)
+                engine.runAndWait()
+                print(elements[0])
 
-            if elements[0].name == 'a':
-                engine.setProperty('volume', 0.6)
-            else:
-                engine.setProperty('volume', 1)
-            engine.say(e)
-            engine.runAndWait()
-
-            if elements[0].name == 'a':
-                # if find_similarity(body.get_text(), e) >= 0.8:
-                if keyboard.read_key() == 'enter':
-                    search(e)
-                elif keyboard.read_key() == 'backspace':
-                    return True
+                if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.9:
+                    if keyboard.read_key() == 'enter':
+                        search(e)
+                    elif keyboard.read_key() == 'backspace':
+                        return True
 
             elements.pop(0)
             allText = allText[len(e):]  
-
-    
 
     while (len(plain_texts)>0):
         pt = plain_texts[0]
@@ -141,30 +170,33 @@ def outputP(para, body):
         plain_texts.pop(0)
         allText = allText[len(pt):]
 
-
     while (len(elements)>0):
         if allText[0] == ' ':
             allText = allText[1:]
 
         e = elements[0]
-        if elements[0].name == 'a':
-            engine.setProperty('volume', 0.6)
-        else:
-            engine.setProperty('volume', 1)
-        engine.say(e)
-        engine.runAndWait()
 
-        if elements[0].name == 'a':
-            # if find_similarity(body.get_text(), e) >= 0.8:
-            if keyboard.read_key() == 'enter':
-                search(e)
-            elif keyboard.read_key() == 'backspace':
-                return True
+        if 'reference' not in elements[0].parent.get('class', []):
+            if elements[0].name == 'a':
+                engine.setProperty('volume', 0.6)
+            else:
+                engine.setProperty('volume', 1)
+            engine.say(e)
+            engine.runAndWait()
+            print(elements[0])
+
+            if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.9:
+                if keyboard.read_key() == 'enter':
+                    search(e)
+                elif keyboard.read_key() == 'backspace':
+                    return True
 
         elements.pop(0)
         allText = allText[len(e):]
     
     return False
+
+
 
 
 def output(body):
@@ -182,6 +214,8 @@ def output(body):
                 end = outputImg(tag, body)
             elif tag.name == 'table':
                 outputTable(tag)
+
+
 
 
 def search(text):
@@ -209,6 +243,8 @@ def search(text):
             print("Error in finding the webpage")
     except:
         print("Error in finding the webpage")
+
+
 
 
 with sr.Microphone() as source:
