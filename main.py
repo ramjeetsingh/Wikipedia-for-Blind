@@ -28,25 +28,41 @@ def get_content(l):
 def find_similarity(page1, link_topic):
     page1 = nlp(page1[:min(len(page1), 10000)])
 
-    page = wp.page(link_topic, auto_suggest=False)
-    wiki_link = f'https://en.wikipedia.org/wiki/{page.title}'
-    page2 = (get_content(wiki_link))
-    page2 = nlp(page2[:min(len(page2), 10000)])
+    try:
+        page = wp.page(link_topic, auto_suggest=False)
+        wiki_link = f'https://en.wikipedia.org/wiki/{page.title}'
+        page2 = (get_content(wiki_link))
+        page2 = nlp(page2[:min(len(page2), 10000)])
 
-    return page1.similarity(page2)
+        return page1.similarity(page2)
+    except:
+        return 0
 
 
 
 
 def outputTable(element):
-    caption = element.find("caption")
-    caption_text = caption.get_text()
+    if element.find("caption"):
+        caption = element.find("caption")
+        caption_text = caption.get_text()
 
-    engine.say("Here are the contents of a table describing" + caption_text)
-    engine.runAndWait()
+        engine.say("Here are the contents of a table describing" + caption_text)
+        engine.runAndWait()
 
     body = element.find("tbody")
+
+    r = 0
+
     for row in body.find_all(recursive=False):
+        print(r)
+
+        if r%5 == 0 and r != 0:
+            engine.say("Do you want to continue reading the table")
+            engine.runAndWait()
+            if keyboard.read_key() != "y":
+                return
+
+        
         style_attribute = row.get('style', '')
         if 'display: none' in style_attribute or 'display:none' in style_attribute:
             continue
@@ -89,6 +105,7 @@ def outputTable(element):
                     engine.say(data)
                     engine.runAndWait()
 
+        r += 1
 
 
 
@@ -135,11 +152,11 @@ def outputP(para, body):
         e = elements[0].get_text()
 
         if (allText[0:len(pt)] == pt):
-            engine.setProperty('volume', 1.0)
-            engine.say(pt)
-            engine.runAndWait()
-            plain_texts.pop(0)
-            allText = allText[len(pt):]
+                engine.setProperty('volume', 1.0)
+                engine.say(pt)
+                engine.runAndWait()
+                plain_texts.pop(0)
+                allText = allText[len(pt):]
         else:
             if allText[0] == ' ':
                 allText = allText[1:]
@@ -153,11 +170,19 @@ def outputP(para, body):
                 engine.runAndWait()
                 print(elements[0])
 
-                if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.9:
+                # if not (elements[0].parent.name == 'span' and 'IPA' in elements[0].parent.get('class', [])):
+                if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.95:
+                    engine.say("Do you want to refer to the hyperlink, continue or go back")
+                    engine.runAndWait()
                     if keyboard.read_key() == 'enter':
                         search(e)
                     elif keyboard.read_key() == 'backspace':
                         return True
+                    # elif elements[0].name == 'a':
+                    #     engine.say("Do you want to continue on the same page or go back")
+                    #     engine.runAndWait()
+                    #     if keyboard.read_key() == 'backspace':
+                    #         return True
 
             elements.pop(0)
             allText = allText[len(e):]  
@@ -185,11 +210,19 @@ def outputP(para, body):
             engine.runAndWait()
             print(elements[0])
 
+            # if not (elements[0].parent.name == 'span' and 'IPA' in elements[0].parent.get('class', [])):
             if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.9:
+                engine.say("Do you want to refer to the hyperlink, continue or go back")
+                engine.runAndWait()
                 if keyboard.read_key() == 'enter':
                     search(e)
                 elif keyboard.read_key() == 'backspace':
                     return True
+                # elif elements[0].name == 'a':
+                #     engine.say("Do you want to continue on the same page or go back")
+                #     engine.runAndWait()
+                #     if keyboard.read_key() == 'backspace':
+                #         return True
 
         elements.pop(0)
         allText = allText[len(e):]
@@ -205,15 +238,16 @@ def output(body):
     engine.setProperty('volume', 1.0)    
 
     for tag in body.find_all(recursive=False):
-        if end:
-            return
-        else:
-            if tag.name == 'p':
-                end = outputP(tag, body)
-            elif tag.name == 'figure':
-                end = outputImg(tag, body)
-            elif tag.name == 'table':
-                outputTable(tag)
+        if tag.name == 'p' or tag.name == 'figure' or tag.name == 'table':
+            if end:
+                return
+            else:
+                if tag.name == 'p':
+                    end = outputP(tag, body)
+                elif tag.name == 'figure':
+                    end = outputImg(tag, body)
+                elif tag.name == 'table':
+                    outputTable(tag)
 
 
 
