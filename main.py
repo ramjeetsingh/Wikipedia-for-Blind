@@ -41,7 +41,7 @@ def find_similarity(page1, link_topic):
 
 
 
-def outputTable(element):
+def outputTable(element, body):
     if element.find("caption"):
         caption = element.find("caption")
         caption_text = caption.get_text()
@@ -101,9 +101,10 @@ def outputTable(element):
                         engine.say("An image with the caption" + cap.get_text())
                         engine.runAndWait()
                 elif (content.name == "td" and ("infobox-data" in content.get("class", []) or not content.get('class'))) or content.name == "th":
-                    data = content.get_text()
-                    engine.say(data)
-                    engine.runAndWait()
+                    # data = content.get_text()
+                    # engine.say(data)
+                    # engine.runAndWait()
+                    outputP(content, body)
 
         r += 1
 
@@ -166,6 +167,7 @@ def outputP(para, body):
                     engine.setProperty('volume', 0.6)
                 else:
                     engine.setProperty('volume', 1)
+                    
                 engine.say(e)
                 engine.runAndWait()
                 print(elements[0])
@@ -211,7 +213,7 @@ def outputP(para, body):
             print(elements[0])
 
             # if not (elements[0].parent.name == 'span' and 'IPA' in elements[0].parent.get('class', [])):
-            if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.9:
+            if elements[0].name == 'a' and find_similarity(body.get_text(), e) >= 0.95:
                 engine.say("Do you want to refer to the hyperlink, continue or go back")
                 engine.runAndWait()
                 if keyboard.read_key() == 'enter':
@@ -247,7 +249,7 @@ def output(body):
                 elif tag.name == 'figure':
                     end = outputImg(tag, body)
                 elif tag.name == 'table':
-                    outputTable(tag)
+                    outputTable(tag, body)
 
 
 
